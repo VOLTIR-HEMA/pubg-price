@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة أسعار الشحن</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif; /* خط عربي جميل */
+            background-color: #0b0e14;
+        }
+
+        /* لجعل حقل الإدخال يظهر كأنه نص عادي */
+        .price-input {
+            background: transparent;
+            border: none;
+            color: #ffcb46;
+            font-weight: bold;
+            text-align: center;
+            width: 100px; /* يمكنك تعديل العرض حسب الحاجة */
+            padding: 2px 5px;
+            border-radius: 5px;
+        }
+        /* عند تفعيل وضع التعديل */
+        .price-input.editable {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 2px #ffcb46;
+        }
+        
+        /* إخفاء مؤشر الكتابة عندما لا يكون الحقل قابلاً للتعديل */
+        .price-input:read-only {
+            caret-color: transparent;
+        }
+
+        /* --- Print Styles for Thermal Printer --- */
+        @media print {
+            /* إخفاء كل شيء ما عدا قسم الطباعة */
+            body * {
+                visibility: hidden;
+            }
+            #print-section, #print-section * {
+                visibility: visible;
+            }
+
+            #print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 5px;
+                font-family: monospace; /* خط مناسب للطابعات الحرارية */
+                font-size: 12px;
+                color: #000 !important;
+                background: #fff !important;
+            }
+            #print-section h2, #print-section h3 {
+                text-align: center;
+                margin: 5px 0;
+            }
+        }
+
+        /* Style for the image capture */
+        #print-section-for-capture {
+            font-family: monospace;
+            background: #fff;
+            color: #000;
+            padding: 10px;
+            width: 300px; /* عرض مناسب للطابعة الحرارية 58mm */
+            
+            /* نجعله خارج الشاشة حتى لا يراه المستخدم */
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            
+            visibility: visible !important; /* للتأكد من ظهوره للمكتبة */
+        }
+    </style>
+</head>
+<body class="p-6 text-white min-h-screen flex flex-col justify-center items-center">
+
+    <h1 class="text-3xl font-bold mb-4">قائمة الأسعار</h1>
+    <div class="mb-6 flex gap-4">
+        <button id="edit-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+            تعديل الأسعار
+        </button>
+        <button id="print-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+            طباعة قائمة الأسعار
+        </button>
+    </div>
+
+    <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl w-full">
+        
+        <!-- سيتم إنشاء الكروت هنا بواسطة JavaScript -->
+
+    </div>
+
+    <!-- قسم الطباعة (مخفي على الشاشة) -->
+    <div id="print-section-for-capture">
+        <h2 style="text-align: center; font-weight: bold; font-size: 1.2em;">متجري</h2>
+        <h3 class="text-center mb-2">قائمة الأسعار</h3>
+        <div id="print-items">
+            <!-- محتوى الطباعة سيتم إنشاؤه هنا -->
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cardsContainer = document.getElementById('cards-container');
+            const printBtn = document.getElementById('print-btn');
+            const editBtn = document.getElementById('edit-btn');
+            const printItemsContainer = document.getElementById('print-items'); // This is for the image
+
+            // بيانات المنتجات (يمكنك تعديلها أو زيادتها)
+            const products = [
+                { id: 'uc684', name: '84 + 600 UC', defaultPrice: '479.99' },
+                { id: 'uc32', name: '2 + 30 UC', defaultPrice: '23.99' },
+                { id: 'uc337', name: '37 + 300 UC', defaultPrice: '239.99' },
+                { id: 'uc63', name: '3 + 60 UC', defaultPrice: '47.99' },
+                { id: 'uc16680', name: '4680 + 12000 UC', defaultPrice: '9599.99' },
+                { id: 'uc8340', name: '2340 + 6000 UC', defaultPrice: '4799.99' },
+                { id: 'uc3970', name: '970 + 3000 UC', defaultPrice: '2399.99' },
+                { id: 'uc1860', name: '360 + 1500 UC', defaultPrice: '1199.99' },
+            ];
+
+            let isEditMode = false;
+
+            // تحميل الأسعار المحفوظة أو استخدام الأسعار الافتراضية
+            let prices = JSON.parse(localStorage.getItem('productPrices')) || {};
+
+            // إنشاء كروت المنتجات
+            products.forEach(product => {
+                const currentPrice = prices[product.id] || product.defaultPrice;
+
+                const card = document.createElement('div');
+                card.className = 'bg-[#161a2b] border border-[#1e243a] rounded-xl p-4 flex flex-col items-center shadow-lg';
+                card.innerHTML = `
+                    <img src="https://i.imgur.com/Jk4j3aJ.png" alt="UC" class="w-32 h-32 object-contain my-2">
+                    <div class="text-xl font-black mt-2 text-white">
+                        ${product.name}
+                    </div>
+                    <div class="text-[#ffcb46] font-bold text-sm mt-1 flex items-center gap-1">
+                        <span>EGP</span>
+                        <input type="text" id="${product.id}" value="${currentPrice}" class="price-input" readonly>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
+
+                // إضافة مستمع لتحديث السعر عند التغيير
+                const priceInput = document.getElementById(product.id);
+                priceInput.addEventListener('input', (e) => {
+                    prices[product.id] = e.target.value;
+                    localStorage.setItem('productPrices', JSON.stringify(prices));
+                });
+            });
+
+            // زر تفعيل/إلغاء وضع التعديل
+            editBtn.addEventListener('click', () => {
+                isEditMode = !isEditMode; // عكس الحالة
+                const allPriceInputs = document.querySelectorAll('.price-input');
+
+                if (isEditMode) {
+                    editBtn.textContent = 'حفظ التعديلات';
+                    editBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                    editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                } else {
+                    editBtn.textContent = 'تعديل الأسعار';
+                    editBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                    editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                }
+
+                allPriceInputs.forEach(input => {
+                    input.readOnly = !isEditMode;
+                    input.classList.toggle('editable', isEditMode);
+                });
+            });
+
+            // وظيفة الطباعة
+            printBtn.addEventListener('click', () => {
+                // 1. تجهيز المحتوى داخل القسم المخصص للتصوير
+                printItemsContainer.innerHTML = '';
+                printItemsContainer.style.display = 'grid';
+                printItemsContainer.style.gridTemplateColumns = '1fr 1fr'; // عمودان
+                printItemsContainer.style.gap = '8px';
+                printItemsContainer.style.marginTop = '10px';
+
+                products.forEach(product => {
+                    const price = document.getElementById(product.id).value;
+                    const itemDiv = document.createElement('div');
+                    itemDiv.style.border = '1px solid #000';
+                    itemDiv.style.borderRadius = '4px';
+                    itemDiv.style.padding = '5px';
+                    itemDiv.style.textAlign = 'center';
+                    itemDiv.style.fontSize = '10px'; // حجم خط صغير
+                    itemDiv.innerHTML = `
+                        <div style="font-weight: bold;">${product.name}</div>
+                        <div>EGP ${price}</div>
+                    `;
+                    printItemsContainer.appendChild(itemDiv);
+                });
+
+                // 2. استخدام html2canvas لالتقاط الصورة
+                const captureElement = document.getElementById('print-section-for-capture');
+                html2canvas(captureElement).then(canvas => {
+                    // 3. تحويل الصورة إلى رابط وتنزيلها
+                    const link = document.createElement('a');
+                    link.download = 'prices.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+                // استدعاء وظيفة الطباعة في المتصفح
+                window.print();
+            });
+        });
+    </script>
+
+</body>
+</html>
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // تحميل البيانات عند فتح الصفحة لأول مرة
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+
+</body>
+</html>
