@@ -183,29 +183,42 @@
             printBtn.addEventListener('click', () => {
                 // 1. تجهيز المحتوى داخل القسم المخصص للتصوير
                 printItemsContainer.innerHTML = '';
-                printItemsContainer.style.display = 'grid';
-                printItemsContainer.style.gridTemplateColumns = '1fr 1fr'; // عمودان
-                printItemsContainer.style.gap = '8px';
-                printItemsContainer.style.marginTop = '10px';
 
                 products.forEach(product => {
                     const price = document.getElementById(product.id).value;
                     const itemDiv = document.createElement('div');
-                    itemDiv.style.border = '1px solid #000';
-                    itemDiv.style.borderRadius = '4px';
-                    itemDiv.style.padding = '5px';
-                    itemDiv.style.textAlign = 'center';
-                    itemDiv.style.fontSize = '10px'; // حجم خط صغير
-                    itemDiv.innerHTML = `
-                        <div style="font-weight: bold;">${product.name}</div>
-                        <div>EGP ${price}</div>
-                    `;
+                    // استخدام flexbox لترتيب الصورة بجانب النص
+                    itemDiv.style.display = 'flex';
+                    itemDiv.style.alignItems = 'center';
+                    itemDiv.style.borderBottom = '1px dashed #333';
+                    itemDiv.style.padding = '8px 0';
+
+                    // إنشاء عنصر الصورة
+                    const img = document.createElement('img');
+                    img.src = product.imageUrl;
+                    img.style.width = '40px';
+                    img.style.height = '40px';
+                    img.style.objectFit = 'contain';
+                    img.style.marginLeft = '10px'; // مسافة بين الصورة والنص
+
+                    // إنشاء حاوية للنص (الاسم والسعر)
+                    const textContainer = document.createElement('div');
+                    textContainer.style.display = 'flex';
+                    textContainer.style.justifyContent = 'space-between';
+                    textContainer.style.width = '100%';
+                    textContainer.style.fontSize = '12px';
+
+                    textContainer.innerHTML = `<span style="font-weight: bold;">${product.name}</span><span>EGP ${price}</span>`;
+                    
+                    itemDiv.appendChild(img);
+                    itemDiv.appendChild(textContainer);
                     printItemsContainer.appendChild(itemDiv);
                 });
 
                 // 2. استخدام html2canvas لالتقاط الصورة
                 const captureElement = document.getElementById('print-section-for-capture');
-                html2canvas(captureElement).then(canvas => {
+                // إضافة خيار useCORS للسماح بتحميل الصور من روابط خارجية
+                html2canvas(captureElement, { useCORS: true }).then(canvas => {
                     // 3. تحويل الصورة إلى رابط وتنزيلها
                     const link = document.createElement('a');
                     link.download = 'prices.png';
