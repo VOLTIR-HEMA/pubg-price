@@ -1,252 +1,208 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>قائمة أسعار الشحن</title>
+    <title>Cyber Cafe - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body {
-            font-family: 'Cairo', sans-serif; /* خط عربي جميل */
-            background-color: #0b0e14;
-        }
-
-        /* لجعل حقل الإدخال يظهر كأنه نص عادي */
-        .price-input {
-            background: transparent;
-            border: none;
-            color: #ffcb46;
-            font-weight: bold;
-            text-align: center;
-            width: 100px; /* يمكنك تعديل العرض حسب الحاجة */
-            padding: 2px 5px;
-            border-radius: 5px;
-        }
-        /* عند تفعيل وضع التعديل */
-        .price-input.editable {
-            outline: none;
-            background-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 0 2px #ffcb46;
-        }
-        
-        /* إخفاء مؤشر الكتابة عندما لا يكون الحقل قابلاً للتعديل */
-        .price-input:read-only {
-            caret-color: transparent;
-        }
-
-        /* --- Print Styles for Thermal Printer --- */
-        @media print {
-            /* إخفاء كل شيء ما عدا قسم الطباعة */
-            body * {
-                visibility: hidden;
-            }
-            #print-section, #print-section * {
-                visibility: visible;
-            }
-
-            #print-section {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 5px;
-                font-family: monospace; /* خط مناسب للطابعات الحرارية */
-                font-size: 12px;
-                color: #000 !important;
-                background: #fff !important;
-            }
-            #print-section h2, #print-section h3 {
-                text-align: center;
-                margin: 5px 0;
-            }
-        }
-
-        /* Style for the image capture */
-        #print-section-for-capture {
-            font-family: monospace;
-            background: #fff;
-            color: #000;
-            padding: 10px;
-            width: 300px; /* عرض مناسب للطابعة الحرارية 58mm */
-            
-            /* نجعله خارج الشاشة حتى لا يراه المستخدم */
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-            
-            visibility: visible !important; /* للتأكد من ظهوره للمكتبة */
-        }
+        .status-available { background-color: #22c55e; } /* green-500 */
+        .status-busy { background-color: #f97316; } /* orange-500 */
+        .status-locked { background-color: #ef4444; } /* red-500 */
     </style>
 </head>
-<body class="p-6 text-white min-h-screen flex flex-col justify-center items-center">
+<body class="bg-gray-900 text-white font-sans">
 
-    <h1 class="text-3xl font-bold mb-4">قائمة الأسعار</h1>
-    <div class="mb-6 flex gap-4">
-        <button id="edit-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-            تعديل الأسعار
-        </button>
-        <button id="print-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
-            طباعة قائمة الأسعار
-        </button>
-    </div>
+    <div class="container mx-auto p-4">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold">Cyber Cafe Dashboard</h1>
+            <p class="text-gray-400">Real-time PC Monitoring</p>
+        </header>
 
-    <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl w-full">
-        
-        <!-- سيتم إنشاء الكروت هنا بواسطة JavaScript -->
-
-    </div>
-
-    <!-- قسم الطباعة (مخفي على الشاشة) -->
-    <div id="print-section-for-capture">
-        <h2 style="text-align: center; font-weight: bold; font-size: 1.2em;">Dr.IBRAHIM STORE</h2>
-        <h3 class="text-center mb-2">قائمة الأسعار</h3>
-        <div id="print-items">
-            <!-- محتوى الطباعة سيتم إنشاؤه هنا -->
+        <div id="pc-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <!-- PC Cards will be injected here by JavaScript -->
         </div>
     </div>
 
+    <!-- Control Modal -->
+    <div id="control-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+            <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h2 id="modal-pc-id" class="text-2xl font-bold mb-4">Control PC-XX</h2>
+            
+            <!-- Add Time -->
+            <div class="mb-4">
+                <label class="block mb-2">Add Extra Time (Minutes)</label>
+                <div class="flex">
+                    <input type="number" id="modal-add-time-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="e.g., 30">
+                    <button onclick="addExtraTime()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Add</button>
+                </div>
+            </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const cardsContainer = document.getElementById('cards-container');
-            const printBtn = document.getElementById('print-btn');
-            const editBtn = document.getElementById('edit-btn');
-            const printItemsContainer = document.getElementById('print-items'); // This is for the image
+            <!-- Remote Commands -->
+            <div class="mb-6">
+                <label class="block mb-2">Remote Commands</label>
+                <div class="flex space-x-2">
+                    <button onclick="sendCommand('UNLOCK')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"><i class="fas fa-unlock mr-2"></i>Unlock</button>
+                    <button onclick="sendCommand('FORCE_LOCK')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"><i class="fas fa-lock mr-2"></i>Force Lock</button>
+                    <button onclick="sendCommand('REQUEST_SCREENSHOT')" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"><i class="fas fa-camera mr-2"></i>Screenshot</button>
+                </div>
+            </div>
 
-            // بيانات المنتجات (يمكنك تعديلها أو زيادتها)
-            const products = [
-                { id: 'uc684', name: ' 60 UC', defaultPrice: '60', imageUrl: 'https://voltir-hema.github.io/pubg-price/1.png' },
-                { id: 'uc32', name: '25 + 300 UC', defaultPrice: '260', imageUrl: 'https://voltir-hema.github.io/pubg-price/1.png' },
-                { id: 'uc337', name: '60 + 600 UC', defaultPrice: '520', imageUrl: 'https://voltir-hema.github.io/pubg-price/2.png' },
-                { id: 'uc63', name: '300 + 1500', defaultPrice: '1300', imageUrl: 'https://voltir-hema.github.io/pubg-price/2.png' },
-                { id: 'uc16680', name: '850 + 3000 UC', defaultPrice: '2600', imageUrl: 'https://voltir-hema.github.io/pubg-price/2.png' },
-                { id: 'uc8340', name: '2100 + 6000 UC', defaultPrice: '5300', imageUrl: 'https://voltir-hema.github.io/pubg-price/2.png' },
-              
-            ];
+            <!-- Screenshot Viewer -->
+            <div>
+                <label class="block mb-2">Live Screenshot</label>
+                <div id="screenshot-container" class="bg-gray-900 border border-gray-600 rounded h-48 flex items-center justify-center">
+                    <p class="text-gray-500">No screenshot requested yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            let isEditMode = false;
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-            // تحميل الأسعار المحفوظة أو استخدام الأسعار الافتراضية
-            let prices = JSON.parse(localStorage.getItem('productPrices')) || {};
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyATZxYMCcgj2Soxfuh-GWLlZu7LFNWeDSk",
+          authDomain: "caffe-2003.firebaseapp.com",
+          databaseURL: "https://caffe-2003-default-rtdb.firebaseio.com",
+          projectId: "caffe-2003",
+          storageBucket: "caffe-2003.appspot.com",
+          messagingSenderId: "904443853862",
+          appId: "1:904443853862:web:bc8328b07144ecbe41bae7",
+          measurementId: "G-8PKT78MR7G"
+        };
 
-            // إنشاء كروت المنتجات
-            products.forEach(product => {
-                const currentPrice = prices[product.id] || product.defaultPrice;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase(app);
 
-                const card = document.createElement('div');
-                card.className = 'bg-[#161a2b] border border-[#1e243a] rounded-xl p-4 flex flex-col items-center shadow-lg';
-                card.innerHTML = `
-                    <img src="${product.imageUrl}" alt="UC" class="w-32 h-32 object-contain my-2">
-                    <div class="text-xl font-black mt-2 text-white">
-                        ${product.name}
-                    </div>
-                    <div class="text-[#ffcb46] font-bold text-sm mt-1 flex items-center gap-1">
-                        <span>EGP</span>
-                        <input type="text" id="${product.id}" value="${currentPrice}" class="price-input" readonly>
-                    </div>
-                `;
-                cardsContainer.appendChild(card);
+        const pcGrid = document.getElementById('pc-grid');
+        const modal = document.getElementById('control-modal');
+        const modalPcId = document.getElementById('modal-pc-id');
+        const screenshotContainer = document.getElementById('screenshot-container');
+        let currentPcId = null;
+        let countdownIntervals = {};
 
-                // إضافة مستمع لتحديث السعر عند التغيير
-                const priceInput = document.getElementById(product.id);
-                priceInput.addEventListener('input', (e) => {
-                    prices[product.id] = e.target.value;
-                    localStorage.setItem('productPrices', JSON.stringify(prices));
-                });
-            });
-
-            // زر تفعيل/إلغاء وضع التعديل
-            editBtn.addEventListener('click', () => {
-                isEditMode = !isEditMode; // عكس الحالة
-                const allPriceInputs = document.querySelectorAll('.price-input');
-
-                if (isEditMode) {
-                    editBtn.textContent = 'حفظ التعديلات';
-                    editBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                    editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                } else {
-                    editBtn.textContent = 'تعديل الأسعار';
-                    editBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                    editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+        // Listen for real-time updates
+        const pcsRef = ref(database, 'pcs');
+        onValue(pcsRef, (snapshot) => {
+            const data = snapshot.val();
+            pcGrid.innerHTML = ''; // Clear existing grid
+            Object.keys(data).sort().forEach(pcId => {
+                const pc = data[pcId];
+                
+                // Clear previous interval for this PC
+                if (countdownIntervals[pcId]) {
+                    clearInterval(countdownIntervals[pcId]);
                 }
 
-                allPriceInputs.forEach(input => {
-                    input.readOnly = !isEditMode;
-                    input.classList.toggle('editable', isEditMode);
-                });
-            });
+                const statusColor = `status-${pc.status.toLowerCase()}`;
+                const card = document.createElement('div');
+                card.className = `rounded-lg shadow-lg p-4 flex flex-col justify-between ${statusColor}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xl font-bold">${pcId}</h3>
+                            <span class="text-sm font-semibold px-2 py-1 rounded-full bg-black bg-opacity-20">${pc.status}</span>
+                        </div>
+                        <div id="timer-${pcId}" class="text-center my-4">
+                            <p class="text-3xl font-mono">--:--</p>
+                            <p class="text-xs text-gray-200">Remaining Time</p>
+                        </div>
+                    </div>
+                    <button onclick="window.openModal('${pcId}')" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mt-2">
+                        <i class="fas fa-cog mr-2"></i>Control
+                    </button>
+                `;
+                pcGrid.appendChild(card);
 
-            // وظيفة الطباعة
-            printBtn.addEventListener('click', () => {
-                // 1. تجهيز المحتوى داخل القسم المخصص للتصوير
-                printItemsContainer.innerHTML = '';
+                if (pc.status === 'BUSY' && pc.endTime) {
+                    const timerEl = document.getElementById(`timer-${pcId}`);
+                    countdownIntervals[pcId] = setInterval(() => {
+                        const now = Date.now();
+                        const remaining = pc.endTime - now;
+                        if (remaining > 0) {
+                            const minutes = Math.floor((remaining / 1000 / 60) % 60).toString().padStart(2, '0');
+                            const seconds = Math.floor((remaining / 1000) % 60).toString().padStart(2, '0');
+                            timerEl.querySelector('p:first-child').textContent = `${minutes}:${seconds}`;
+                        } else {
+                            timerEl.querySelector('p:first-child').textContent = '00:00';
+                            clearInterval(countdownIntervals[pcId]);
+                        }
+                    }, 1000);
+                }
 
-                products.forEach(product => {
-                    const price = document.getElementById(product.id).value;
-                    const itemDiv = document.createElement('div');
-                    // استخدام flexbox لترتيب الصورة بجانب النص
-                    itemDiv.style.display = 'flex';
-                    itemDiv.style.alignItems = 'center';
-                    itemDiv.style.borderBottom = '1px dashed #333';
-                    itemDiv.style.padding = '8px 0';
-
-                    // إنشاء عنصر الصورة
-                    const img = document.createElement('img');
-                    img.src = product.imageUrl;
-                    img.style.width = '40px';
-                    img.style.height = '40px';
-                    img.style.objectFit = 'contain';
-                    img.style.marginLeft = '10px'; // مسافة بين الصورة والنص
-
-                    // إنشاء حاوية للنص (الاسم والسعر)
-                    const textContainer = document.createElement('div');
-                    textContainer.style.display = 'flex';
-                    textContainer.style.justifyContent = 'space-between';
-                    textContainer.style.width = '100%';
-                    textContainer.style.fontSize = '12px';
-
-                    textContainer.innerHTML = `<span style="font-weight: bold;">${product.name}</span><span>EGP ${price}</span>`;
-                    
-                    itemDiv.appendChild(img);
-                    itemDiv.appendChild(textContainer);
-                    printItemsContainer.appendChild(itemDiv);
-                });
-
-                // 2. استخدام html2canvas لالتقاط الصورة
-                const captureElement = document.getElementById('print-section-for-capture');
-                // إضافة خيار useCORS للسماح بتحميل الصور من روابط خارجية
-                html2canvas(captureElement, { useCORS: true }).then(canvas => {
-                    // 3. تحويل الصورة إلى رابط وتنزيلها
-                    const link = document.createElement('a');
-                    link.download = 'prices.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                });
+                // Update modal if it's open for the current PC
+                if (modal.style.display !== 'hidden' && currentPcId === pcId) {
+                    updateModalView(pc);
+                }
             });
         });
+
+        function updateModalView(pc) {
+            if (pc.screenshotUrl) {
+                screenshotContainer.innerHTML = `<img src="${pc.screenshotUrl}" class="max-h-full max-w-full object-contain">`;
+            } else {
+                screenshotContainer.innerHTML = `<p class="text-gray-500">No screenshot available.</p>`;
+            }
+        }
+
+        window.openModal = (pcId) => {
+            currentPcId = pcId;
+            modalPcId.textContent = `Control ${pcId}`;
+            document.getElementById('modal-add-time-input').value = '';
+            // Fetch latest data for the modal view
+            onValue(ref(database, `pcs/${pcId}`), (snapshot) => {
+                if (snapshot.exists()) {
+                    updateModalView(snapshot.val());
+                }
+            }, { onlyOnce: true });
+            modal.classList.remove('hidden');
+        };
+
+        window.closeModal = () => {
+            modal.classList.add('hidden');
+            currentPcId = null;
+            screenshotContainer.innerHTML = `<p class="text-gray-500">No screenshot requested yet.</p>`;
+        };
+
+        window.addExtraTime = () => {
+            const minutesToAdd = parseInt(document.getElementById('modal-add-time-input').value);
+            if (!currentPcId || isNaN(minutesToAdd) || minutesToAdd <= 0) return;
+
+            onValue(ref(database, `pcs/${currentPcId}`), (snapshot) => {
+                const pc = snapshot.val();
+                const currentTime = Date.now();
+                // If session is expired or not started, start from now. Otherwise, add to existing end time.
+                const baseTime = (pc.status === 'BUSY' && pc.endTime > currentTime) ? pc.endTime : currentTime;
+                const newEndTime = baseTime + minutesToAdd * 60 * 1000;
+                
+                update(ref(database, `pcs/${currentPcId}`), {
+                    endTime: newEndTime,
+                    status: 'BUSY'
+                });
+                closeModal();
+            }, { onlyOnce: true });
+        };
+
+        window.sendCommand = (command) => {
+            if (!currentPcId) return;
+            const updates = {};
+            updates[`/pcs/${currentPcId}/command`] = command;
+            // Clear screenshot URL when requesting a new one
+            if (command === 'REQUEST_SCREENSHOT') {
+                 updates[`/pcs/${currentPcId}/screenshotUrl`] = null;
+            }
+            update(ref(database), updates);
+        };
+
     </script>
-
-</body>
-</html>
-
-                // استدعاء وظيفة الطباعة في المتصفح
-                window.print();
-            });
-        });
-    </script>
-
-</body>
-</html>
-        printBtn.addEventListener('click', () => {
-            window.print();
-        });
-
-        // تحميل البيانات عند فتح الصفحة لأول مرة
-        document.addEventListener('DOMContentLoaded', loadData);
-    </script>
-
 </body>
 </html>
