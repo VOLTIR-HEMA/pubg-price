@@ -1,59 +1,101 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Cafe - Admin Dashboard</title>
+    <title>Cyber Cafe - Master Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        body { font-family: 'Segoe UI', sans-serif; }
         .status-available { background-color: #22c55e; } /* green-500 */
-        .status-busy { background-color: #f97316; } /* orange-500 */
-        .status-locked { background-color: #ef4444; } /* red-500 */
+        .status-busy { background-color: #f97316; }      /* orange-500 */
+        .status-open-time { background-color: #3b82f6; } /* blue-500 */
+        .status-locked { background-color: #ef4444; }    /* red-500 */
+        .status-offline { background-color: #6b7280; }   /* gray-500 */
+        .status-online { background-color: #16a34a; }    /* green-600 */
+        .status-disconnected { background-color: #dc2626; } /* red-600 */
     </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
+<body class="bg-gray-900 text-white">
 
-    <div class="container mx-auto p-4">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold">Cyber Cafe Dashboard</h1>
-            <p class="text-gray-400">Real-time PC Monitoring</p>
+    <div class="container mx-auto p-4 md:p-6">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold">🎮 Cyber Cafe Master Dashboard</h1>
+            <div class="flex justify-center items-center gap-2 mt-2">
+                <p class="text-gray-400">Firebase Connection:</p>
+                <span id="firebase-status" class="px-3 py-1 text-sm font-semibold rounded-full status-disconnected">DISCONNECTED</span>
+            </div>
         </header>
 
-        <div id="pc-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            <!-- PC Cards will be injected here by JavaScript -->
+        <!-- Toolbar -->
+        <div class="mb-6 p-4 bg-gray-800 rounded-lg shadow-md flex flex-wrap gap-3 justify-center">
+            <button onclick="app.sendGlobalCommand('LOCK_AVAILABLE')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-lock mr-2"></i>🔒 قفل المتاحين</button>
+            <button onclick="app.sendGlobalCommand('UNLOCK_ALL')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-unlock-alt mr-2"></i>🔓 فتح الجميع</button>
+            <button onclick="app.sendGlobalCommand('SHUTDOWN_ALL')" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-power-off mr-2"></i>⚡ إغلاق الجميع</button>
+            <button onclick="app.openSettingsModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-cogs mr-2"></i>⚙️ الإعدادات</button>
+        </div>
+
+        <!-- PC Grid -->
+        <div id="pc-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            <!-- PC Cards will be dynamically injected here -->
         </div>
     </div>
 
-    <!-- Control Modal -->
-    <div id="control-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+    <!-- Control PC Modal -->
+    <div id="control-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md relative">
+            <button onclick="app.closeControlModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h2 id="modal-pc-id" class="text-2xl font-bold mb-6">Control PC-XX</h2>
+
+            <!-- Actions -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block mb-2">Add Fixed Time (Minutes)</label>
+                    <div class="flex">
+                        <input type="number" id="modal-add-time-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="e.g., 60">
+                        <button onclick="app.addFixedTime()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Add</button>
+                    </div>
+                </div>
+                
+                <button onclick="app.openUnlimitedSession()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">⏱️ وقت مفتوح (Open Session)</button>
+                <button onclick="app.forceLock()" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">🔒 قفل إجباري (Force Lock)</button>
+
+                <div>
+                    <label class="block mb-2">Broadcast Alert to this PC</label>
+                    <div class="flex">
+                        <input type="text" id="modal-broadcast-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Your message...">
+                        <button onclick="app.sendBroadcast()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
         <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative">
-            <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
-            <h2 id="modal-pc-id" class="text-2xl font-bold mb-4">Control PC-XX</h2>
-            
-            <!-- Add Time -->
-            <div class="mb-4">
-                <label class="block mb-2">Add Extra Time (Minutes)</label>
-                <div class="flex">
-                    <input type="number" id="modal-add-time-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="e.g., 30">
-                    <button onclick="addExtraTime()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Add</button>
-                </div>
-            </div>
+            <button onclick="app.closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-6">Global Settings</h2>
 
-            <!-- Remote Commands -->
+            <!-- Daily Unlock PIN -->
             <div class="mb-6">
-                <label class="block mb-2">Remote Commands</label>
-                <div class="flex space-x-2">
-                    <button onclick="sendCommand('UNLOCK')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"><i class="fas fa-unlock mr-2"></i>Unlock</button>
-                    <button onclick="sendCommand('FORCE_LOCK')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"><i class="fas fa-lock mr-2"></i>Force Lock</button>
-                    <button onclick="sendCommand('REQUEST_SCREENSHOT')" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"><i class="fas fa-camera mr-2"></i>Screenshot</button>
+                <label class="block mb-2 font-semibold">Daily Unlock PIN</label>
+                <p class="text-sm text-gray-400 mb-2">PIN used by the agent to automatically unlock screens.</p>
+                <div class="flex">
+                    <input type="password" id="daily-pin-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Enter new PIN">
+                    <button onclick="app.saveDailyPin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Save PIN</button>
                 </div>
             </div>
 
-            <!-- Screenshot Viewer -->
+            <!-- Change Windows System Password -->
             <div>
-                <label class="block mb-2">Live Screenshot</label>
-                <div id="screenshot-container" class="bg-gray-900 border border-gray-600 rounded h-48 flex items-center justify-center">
-                    <p class="text-gray-500">No screenshot requested yet.</p>
+                <label class="block mb-2 font-semibold">Change All Windows Passwords</label>
+                <p class="text-sm text-gray-400 mb-2">WARNING: This changes the actual Windows user password on all online PCs.</p>
+                <div class="flex">
+                    <input type="password" id="windows-password-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Enter new system password">
+                    <button onclick="app.changeAllWindowsPasswords()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r">Change All</button>
                 </div>
             </div>
         </div>
@@ -61,148 +103,25 @@
 
     <!-- Firebase SDK -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js";
-        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+        import { getDatabase, ref, onValue, update, get, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+        import App from './app.js';
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
-          apiKey: "AIzaSyATZxYMCcgj2Soxfuh-GWLlZu7LFNWeDSk",
+          apiKey: "AIzaSyATZxYMCcgj2Soxfuh-GWLlZu7LFNWeDSk", // Replace with your actual config
           authDomain: "caffe-2003.firebaseapp.com",
           databaseURL: "https://caffe-2003-default-rtdb.firebaseio.com",
           projectId: "caffe-2003",
           storageBucket: "caffe-2003.appspot.com",
           messagingSenderId: "904443853862",
-          appId: "1:904443853862:web:bc8328b07144ecbe41bae7",
-          measurementId: "G-8PKT78MR7G"
+          appId: "1:904443853862:web:bc8328b07144ecbe41bae7"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase(app);
-
-        const pcGrid = document.getElementById('pc-grid');
-        const modal = document.getElementById('control-modal');
-        const modalPcId = document.getElementById('modal-pc-id');
-        const screenshotContainer = document.getElementById('screenshot-container');
-        let currentPcId = null;
-        let countdownIntervals = {};
-
-        // Listen for real-time updates
-        const pcsRef = ref(database, 'pcs');
-        onValue(pcsRef, (snapshot) => {
-            const data = snapshot.val();
-            pcGrid.innerHTML = ''; // Clear existing grid
-            Object.keys(data).sort().forEach(pcId => {
-                const pc = data[pcId];
-                
-                // Clear previous interval for this PC
-                if (countdownIntervals[pcId]) {
-                    clearInterval(countdownIntervals[pcId]);
-                }
-
-                const statusColor = `status-${pc.status.toLowerCase()}`;
-                const card = document.createElement('div');
-                card.className = `rounded-lg shadow-lg p-4 flex flex-col justify-between ${statusColor}`;
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-xl font-bold">${pcId}</h3>
-                            <span class="text-sm font-semibold px-2 py-1 rounded-full bg-black bg-opacity-20">${pc.status}</span>
-                        </div>
-                        <div id="timer-${pcId}" class="text-center my-4">
-                            <p class="text-3xl font-mono">--:--</p>
-                            <p class="text-xs text-gray-200">Remaining Time</p>
-                        </div>
-                    </div>
-                    <button onclick="window.openModal('${pcId}')" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mt-2">
-                        <i class="fas fa-cog mr-2"></i>Control
-                    </button>
-                `;
-                pcGrid.appendChild(card);
-
-                if (pc.status === 'BUSY' && pc.endTime) {
-                    const timerEl = document.getElementById(`timer-${pcId}`);
-                    countdownIntervals[pcId] = setInterval(() => {
-                        const now = Date.now();
-                        const remaining = pc.endTime - now;
-                        if (remaining > 0) {
-                            const minutes = Math.floor((remaining / 1000 / 60) % 60).toString().padStart(2, '0');
-                            const seconds = Math.floor((remaining / 1000) % 60).toString().padStart(2, '0');
-                            timerEl.querySelector('p:first-child').textContent = `${minutes}:${seconds}`;
-                        } else {
-                            timerEl.querySelector('p:first-child').textContent = '00:00';
-                            clearInterval(countdownIntervals[pcId]);
-                        }
-                    }, 1000);
-                }
-
-                // Update modal if it's open for the current PC
-                if (modal.style.display !== 'hidden' && currentPcId === pcId) {
-                    updateModalView(pc);
-                }
-            });
-        });
-
-        function updateModalView(pc) {
-            if (pc.screenshotUrl) {
-                screenshotContainer.innerHTML = `<img src="${pc.screenshotUrl}" class="max-h-full max-w-full object-contain">`;
-            } else {
-                screenshotContainer.innerHTML = `<p class="text-gray-500">No screenshot available.</p>`;
-            }
-        }
-
-        window.openModal = (pcId) => {
-            currentPcId = pcId;
-            modalPcId.textContent = `Control ${pcId}`;
-            document.getElementById('modal-add-time-input').value = '';
-            // Fetch latest data for the modal view
-            onValue(ref(database, `pcs/${pcId}`), (snapshot) => {
-                if (snapshot.exists()) {
-                    updateModalView(snapshot.val());
-                }
-            }, { onlyOnce: true });
-            modal.classList.remove('hidden');
-        };
-
-        window.closeModal = () => {
-            modal.classList.add('hidden');
-            currentPcId = null;
-            screenshotContainer.innerHTML = `<p class="text-gray-500">No screenshot requested yet.</p>`;
-        };
-
-        window.addExtraTime = () => {
-            const minutesToAdd = parseInt(document.getElementById('modal-add-time-input').value);
-            if (!currentPcId || isNaN(minutesToAdd) || minutesToAdd <= 0) return;
-
-            onValue(ref(database, `pcs/${currentPcId}`), (snapshot) => {
-                const pc = snapshot.val();
-                const currentTime = Date.now();
-                // If session is expired or not started, start from now. Otherwise, add to existing end time.
-                const baseTime = (pc.status === 'BUSY' && pc.endTime > currentTime) ? pc.endTime : currentTime;
-                const newEndTime = baseTime + minutesToAdd * 60 * 1000;
-                
-                update(ref(database, `pcs/${currentPcId}`), {
-                    endTime: newEndTime,
-                    status: 'BUSY'
-                });
-                closeModal();
-            }, { onlyOnce: true });
-        };
-
-        window.sendCommand = (command) => {
-            if (!currentPcId) return;
-            const updates = {};
-            updates[`/pcs/${currentPcId}/command`] = command;
-            // Clear screenshot URL when requesting a new one
-            if (command === 'REQUEST_SCREENSHOT') {
-                 updates[`/pcs/${currentPcId}/screenshotUrl`] = null;
-            }
-            update(ref(database), updates);
-        };
-
+        const firebaseApp = initializeApp(firebaseConfig);
+        const database = getDatabase(firebaseApp);
+        
+        window.app = new App(database, { ref, onValue, update, get });
+        window.app.init();
     </script>
 </body>
 </html>
