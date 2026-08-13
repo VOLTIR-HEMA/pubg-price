@@ -1,127 +1,288 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Cafe - Master Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; }
-        .status-available { background-color: #22c55e; } /* green-500 */
-        .status-busy { background-color: #f97316; }      /* orange-500 */
-        .status-open-time { background-color: #3b82f6; } /* blue-500 */
-        .status-locked { background-color: #ef4444; }    /* red-500 */
-        .status-offline { background-color: #6b7280; }   /* gray-500 */
-        .status-online { background-color: #16a34a; }    /* green-600 */
-        .status-disconnected { background-color: #dc2626; } /* red-600 */
-    </style>
-</head>
-<body class="bg-gray-900 text-white">
-
-    <div class="container mx-auto p-4 md:p-6">
-        <!-- Header -->
-        <header class="text-center mb-6">
-            <h1 class="text-3xl md:text-4xl font-bold">🎮 Cyber Cafe Master Dashboard</h1>
-            <div class="flex justify-center items-center gap-2 mt-2">
-                <p class="text-gray-400">Firebase Connection:</p>
-                <span id="firebase-status" class="px-3 py-1 text-sm font-semibold rounded-full status-disconnected">DISCONNECTED</span>
-            </div>
-        </header>
-
-        <!-- Toolbar -->
-        <div class="mb-6 p-4 bg-gray-800 rounded-lg shadow-md flex flex-wrap gap-3 justify-center">
-            <button onclick="app.sendGlobalCommand('LOCK_AVAILABLE')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-lock mr-2"></i>🔒 قفل المتاحين</button>
-            <button onclick="app.sendGlobalCommand('UNLOCK_ALL')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-unlock-alt mr-2"></i>🔓 فتح الجميع</button>
-            <button onclick="app.sendGlobalCommand('SHUTDOWN_ALL')" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-power-off mr-2"></i>⚡ إغلاق الجميع</button>
-            <button onclick="app.openSettingsModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-cogs mr-2"></i>⚙️ الإعدادات</button>
-        </div>
-
-        <!-- PC Grid -->
-        <div id="pc-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            <!-- PC Cards will be dynamically injected here -->
-        </div>
-    </div>
-
-    <!-- Control PC Modal -->
-    <div id="control-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md relative">
-            <button onclick="app.closeControlModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
-            <h2 id="modal-pc-id" class="text-2xl font-bold mb-6">Control PC-XX</h2>
-
-            <!-- Actions -->
-            <div class="space-y-4">
-                <div>
-                    <label class="block mb-2">Add Fixed Time (Minutes)</label>
-                    <div class="flex">
-                        <input type="number" id="modal-add-time-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="e.g., 60">
-                        <button onclick="app.addFixedTime()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Add</button>
-                    </div>
-                </div>
-                
-                <button onclick="app.openUnlimitedSession()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">⏱️ وقت مفتوح (Open Session)</button>
-                <button onclick="app.forceLock()" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">🔒 قفل إجباري (Force Lock)</button>
-
-                <div>
-                    <label class="block mb-2">Broadcast Alert to this PC</label>
-                    <div class="flex">
-                        <input type="text" id="modal-broadcast-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Your message...">
-                        <button onclick="app.sendBroadcast()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r">Send</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative">
-            <button onclick="app.closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
-            <h2 class="text-2xl font-bold mb-6">Global Settings</h2>
-
-            <!-- Daily Unlock PIN -->
-            <div class="mb-6">
-                <label class="block mb-2 font-semibold">Daily Unlock PIN</label>
-                <p class="text-sm text-gray-400 mb-2">PIN used by the agent to automatically unlock screens.</p>
-                <div class="flex">
-                    <input type="password" id="daily-pin-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Enter new PIN">
-                    <button onclick="app.saveDailyPin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Save PIN</button>
-                </div>
-            </div>
-
-            <!-- Change Windows System Password -->
-            <div>
-                <label class="block mb-2 font-semibold">Change All Windows Passwords</label>
-                <p class="text-sm text-gray-400 mb-2">WARNING: This changes the actual Windows user password on all online PCs.</p>
-                <div class="flex">
-                    <input type="password" id="windows-password-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Enter new system password">
-                    <button onclick="app.changeAllWindowsPasswords()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r">Change All</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getDatabase, ref, onValue, update, get, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-        import App from './app.js';
-
-        const firebaseConfig = {
-          apiKey: "AIzaSyATZxYMCcgj2Soxfuh-GWLlZu7LFNWeDSk", // Replace with your actual config
-          authDomain: "caffe-2003.firebaseapp.com",
-          databaseURL: "https://caffe-2003-default-rtdb.firebaseio.com",
-          projectId: "caffe-2003",
-          storageBucket: "caffe-2003.appspot.com",
-          messagingSenderId: "904443853862",
-          appId: "1:904443853862:web:bc8328b07144ecbe41bae7"
-        };
-
-        const firebaseApp = initializeApp(firebaseConfig);
-        const database = getDatabase(firebaseApp);
+export default class App {
+    constructor(database, firebase) {
+        this.database = database;
+        this.firebase = firebase;
+        this.pcGrid = document.getElementById('pc-grid');
+        this.controlModal = document.getElementById('control-modal');
+        this.settingsModal = document.getElementById('settings-modal');
+        this.modalPcId = document.getElementById('modal-pc-id');
+        this.connectionStatus = document.getElementById('connection-status');
         
-        window.app = new App(database, { ref, onValue, update, get });
-        window.app.init();
-    </script>
-</body>
-</html>
+        this.currentPcId = null;
+        this.countdownIntervals = {};
+        this.totalPcs = 10;
+    }
+
+    init() {
+        this.listenToFirebaseConnection();
+        this.listenToDevices();
+        this.renderInitialGrid();
+    }
+
+    listenToFirebaseConnection() {
+        const connectedRef = this.firebase.ref(this.database, ".info/connected");
+        this.firebase.onValue(connectedRef, (snap) => {
+          if (snap.val() === true) {
+            this.connectionStatus.textContent = 'CONNECTED';
+            this.connectionStatus.className = 'bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold';
+          } else {
+            this.connectionStatus.textContent = 'DISCONNECTED';
+            this.connectionStatus.className = 'bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold';
+          }
+        });
+    }
+
+    renderInitialGrid() {
+        this.pcGrid.innerHTML = '';
+        for (let i = 1; i <= this.totalPcs; i++) {
+            const pcId = `PC-${String(i).padStart(2, '0')}`;
+            const card = this.createPCCard(pcId, { status: 'OFFLINE' });
+            this.pcGrid.appendChild(card);
+        }
+    }
+
+    listenToDevices() {
+        const devicesRef = this.firebase.ref(this.database, 'devices');
+        this.firebase.onValue(devicesRef, (snapshot) => {
+            const devices = snapshot.val() || {};
+            this.pcGrid.querySelectorAll('.pc-card').forEach(card => {
+                const pcId = card.dataset.pcId;
+                const pcData = devices[pcId] || { status: 'OFFLINE' };
+                this.updatePCCard(pcId, pcData);
+            });
+        });
+    }
+
+    createPCCard(pcId, pcData) {
+        const card = document.createElement('div');
+        card.className = 'pc-card rounded-lg shadow-lg p-4 flex flex-col justify-between transition-all duration-300';
+        card.dataset.pcId = pcId;
+
+        card.innerHTML = `
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xl font-bold">${pcId}</h3>
+                    <span class="status-badge text-xs font-semibold px-2.5 py-1 rounded-full">OFFLINE</span>
+                </div>
+                <div class="timer-container text-center my-4">
+                    <p class="timer-display text-4xl font-mono">--:--</p>
+                    <p class="timer-label text-xs text-gray-300">No Active Session</p>
+                </div>
+            </div>
+            <button onclick="app.openControlModal('${pcId}')" class="control-button w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mt-2 transition-colors">
+                <i class="fas fa-cog mr-2"></i>Control
+            </button>
+        `;
+        this.updatePCCardView(card, pcData);
+        return card;
+    }
+
+    updatePCCard(pcId, pcData) {
+        let card = this.pcGrid.querySelector(`[data-pc-id="${pcId}"]`);
+        if (!card) {
+            card = this.createPCCard(pcId, pcData);
+            this.pcGrid.appendChild(card);
+        } else {
+            this.updatePCCardView(card, pcData);
+        }
+    }
+
+    updatePCCardView(card, pcData) {
+        const status = pcData.isUnlimited ? 'OPEN TIME' : (pcData.status || 'OFFLINE');
+        const statusBadge = card.querySelector('.status-badge');
+        const timerDisplay = card.querySelector('.timer-display');
+        const timerLabel = card.querySelector('.timer-label');
+        const controlButton = card.querySelector('.control-button');
+
+        statusBadge.textContent = status.replace(/_/g, ' ');
+        card.className = `pc-card rounded-lg shadow-lg p-4 flex flex-col justify-between transition-all duration-300 status-${status.toLowerCase().replace(/ /g, '-')}`;
+        controlButton.disabled = status === 'OFFLINE';
+
+        if (this.countdownIntervals[card.dataset.pcId]) {
+            clearInterval(this.countdownIntervals[card.dataset.pcId]);
+        }
+
+        if (status === 'BUSY') {
+            const endTime = pcData.endTime || 0;
+            timerLabel.textContent = 'Remaining Time';
+            this.countdownIntervals[card.dataset.pcId] = setInterval(() => {
+                const remaining = endTime - Date.now();
+                if (remaining > 0) {
+                    timerDisplay.textContent = this.formatTime(remaining);
+                } else {
+                    timerDisplay.textContent = '00:00';
+                    timerLabel.textContent = 'Time Expired';
+                    clearInterval(this.countdownIntervals[card.dataset.pcId]);
+                }
+            }, 1000);
+        } else if (status === 'OPEN TIME') {
+            const startTime = pcData.startTime || 0;
+            timerLabel.textContent = 'Elapsed Time';
+            this.countdownIntervals[card.dataset.pcId] = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                timerDisplay.textContent = this.formatTime(elapsed);
+            }, 1000);
+        } else {
+            timerDisplay.textContent = '--:--';
+            timerLabel.textContent = 'No Active Session';
+        }
+    }
+
+    formatTime(ms) {
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        if (hours > 0) {
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    // --- Modal and Command Logic ---
+
+    openControlModal(pcId) {
+        this.currentPcId = pcId;
+        this.modalPcId.textContent = `Control ${pcId}`;
+        this.controlModal.classList.remove('hidden');
+    }
+
+    closeControlModal() {
+        this.controlModal.classList.add('hidden');
+        this.currentPcId = null;
+    }
+
+    openSettingsModal() {
+        this.settingsModal.classList.remove('hidden');
+        this.firebase.get(this.firebase.ref(this.database, 'settings/dailyPin')).then(snapshot => {
+            if (snapshot.exists()) {
+                document.getElementById('daily-pin-input').value = snapshot.val();
+            }
+        });
+    }
+
+    closeSettingsModal() {
+        this.settingsModal.classList.add('hidden');
+    }
+
+    async addFixedTime() {
+        const minutesToAdd = parseInt(document.getElementById('modal-add-time-input').value);
+        if (!this.currentPcId || isNaN(minutesToAdd) || minutesToAdd <= 0) return;
+
+        const pcRef = this.firebase.ref(this.database, `devices/${this.currentPcId}`);
+        const snapshot = await this.firebase.get(pcRef);
+        const pcData = snapshot.val() || {};
+        const currentTime = Date.now();
+
+        const baseTime = (pcData.status === 'BUSY' && pcData.endTime > currentTime) ? pcData.endTime : currentTime;
+        const newEndTime = baseTime + minutesToAdd * 60 * 1000;
+
+        this.firebase.update(pcRef, {
+            status: 'BUSY',
+            isUnlimited: false,
+            startTime: pcData.startTime || currentTime,
+            endTime: newEndTime,
+            command: 'UNLOCK'
+        });
+        this.closeControlModal();
+    }
+
+    openUnlimitedSession() {
+        if (!this.currentPcId) return;
+        const pcRef = this.firebase.ref(this.database, `devices/${this.currentPcId}`);
+        this.firebase.update(pcRef, {
+            status: 'BUSY',
+            isUnlimited: true,
+            startTime: Date.now(),
+            endTime: null,
+            command: 'UNLOCK'
+        });
+        this.closeControlModal();
+    }
+
+    forceLock() {
+        if (!this.currentPcId) return;
+        const pcRef = this.firebase.ref(this.database, `devices/${this.currentPcId}`);
+        this.firebase.update(pcRef, {
+            status: 'AVAILABLE',
+            isUnlimited: false,
+            startTime: null,
+            endTime: null,
+            command: 'LOCK'
+        });
+        this.closeControlModal();
+    }
+
+    sendBroadcast() {
+        if (!this.currentPcId) return;
+        const message = document.getElementById('modal-broadcast-input').value;
+        if (!message) return;
+        const pcRef = this.firebase.ref(this.database, `devices/${this.currentPcId}`);
+        this.firebase.update(pcRef, { broadcast: message });
+        document.getElementById('modal-broadcast-input').value = '';
+        alert(`Message sent to ${this.currentPcId}`);
+    }
+
+    async sendGlobalCommand(command) {
+        if (!confirm(`Are you sure you want to execute '${command}' on all applicable PCs?`)) return;
+
+        const devicesRef = this.firebase.ref(this.database, 'devices');
+        const snapshot = await this.firebase.get(devicesRef);
+        if (!snapshot.exists()) return;
+
+        const allPcs = snapshot.val();
+        const updates = {};
+        let commandSent = false;
+
+        Object.keys(allPcs).forEach(pcId => {
+            const pc = allPcs[pcId];
+            if (pc.status !== 'OFFLINE') {
+                if (command === 'LOCK_AVAILABLE' && pc.status === 'AVAILABLE') {
+                    updates[`/devices/${pcId}/command`] = 'LOCK';
+                    commandSent = true;
+                } else if (command === 'UNLOCK_ALL' || command === 'SHUTDOWN_ALL') {
+                    updates[`/devices/${pcId}/command`] = command;
+                    commandSent = true;
+                }
+            }
+        });
+
+        if (commandSent) {
+            this.firebase.update(this.firebase.ref(this.database), updates)
+                .then(() => alert(`'${command}' command sent successfully!`))
+                .catch(error => console.error("Error sending global command:", error));
+        } else {
+            alert("No applicable PCs found for this command.");
+        }
+    }
+
+    saveDailyPin() {
+        const newPin = document.getElementById('daily-pin-input').value;
+        if (!newPin) return;
+        this.firebase.update(this.firebase.ref(this.database, 'settings'), { dailyPin: newPin })
+            .then(() => { alert('Daily PIN updated!'); this.closeSettingsModal(); })
+            .catch(error => console.error("Error saving PIN:", error));
+    }
+
+    async changeAllWindowsPasswords() {
+        const newPassword = document.getElementById('windows-password-input').value;
+        if (!newPassword || !confirm('DANGER: Are you sure you want to change the Windows password on ALL online PCs?')) return;
+
+        const devicesRef = this.firebase.ref(this.database, 'devices');
+        const snapshot = await this.firebase.get(devicesRef);
+        if (!snapshot.exists()) return;
+
+        const allPcs = snapshot.val();
+        const updates = {};
+        Object.keys(allPcs).forEach(pcId => {
+            if (allPcs[pcId].status !== 'OFFLINE') {
+                updates[`/devices/${pcId}/command`] = 'CHANGE_SYS_PASSWORD';
+                updates[`/devices/${pcId}/newPassword`] = newPassword;
+            }
+        });
+
+        this.firebase.update(this.firebase.ref(this.database), updates)
+            .then(() => { alert('Command to change all Windows passwords has been sent.'); this.closeSettingsModal(); })
+            .catch(error => console.error("Error sending password change command:", error));
+    }
+}
