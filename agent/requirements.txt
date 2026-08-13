@@ -1,0 +1,4 @@
+requests
+pyautogui
+pystray
+Pillow
