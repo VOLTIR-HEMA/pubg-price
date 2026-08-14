@@ -204,11 +204,11 @@ export default class App {
         if (!this.currentPcId) return;
         const pcRef = this.firebase.ref(this.database, `devices/${this.currentPcId}`);
         this.firebase.update(pcRef, {
-            status: 'AVAILABLE',
+            status: 'LOCKED',
             isUnlimited: false,
             startTime: null,
             endTime: null,
-            command: 'LOCK'
+            command: 'FORCE_LOCK'
         });
         this.closeControlModal();
     }
