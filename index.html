@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Cafe - Master Dashboard</title>
+    <title>VOLTEIR CYBER DASHBOARD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; }
-        .status-available { background-color: #22c55e; } /* green-500 */
-        .status-busy { background-color: #f97316; }      /* orange-500 */
-        .status-open-time { background-color: #3b82f6; } /* blue-500 */
-        .status-locked { background-color: #ef4444; }    /* red-500 */
-        .status-offline { background-color: #6b7280; }   /* gray-500 */
-        .status-online { background-color: #16a34a; }    /* green-600 */
-        .status-manual-open { background-color: #9333ea; } /* purple-600 */
-        .status-disconnected { background-color: #dc2626; } /* red-600 */
+        body { font-family: 'Orbitron', 'Segoe UI', sans-serif; }
+        /* The old status classes are no longer needed, app.js will apply styles directly */
+        .glowing-text {
+            text-shadow: 0 0 5px rgba(250, 204, 21, 0.7),
+                         0 0 10px rgba(250, 204, 21, 0.5),
+                         0 0 20px rgba(250, 204, 21, 0.3);
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="bg-black text-yellow-400">
 
     <div class="container mx-auto p-4 md:p-6">
         <!-- Header -->
         <header class="text-center mb-6">
-            <h1 class="text-3xl md:text-4xl font-bold">🎮 Cyber Cafe Master Dashboard</h1>
+            <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 drop-shadow-[0_0_10px_rgba(255,215,0,0.7)]">
+                VOLTEIR CYBER DASHBOARD
+            </h1>
             <div class="flex justify-center items-center gap-2 mt-2">
                 <p class="text-gray-400">Firebase Connection:</p>
                 <span id="connection-status" class="px-3 py-1 text-sm font-semibold rounded-full status-disconnected">DISCONNECTED</span>
@@ -31,42 +34,41 @@
         </header>
 
         <!-- Toolbar -->
-        <div class="mb-6 p-4 bg-gray-800 rounded-lg shadow-md flex flex-wrap gap-3 justify-center">
-            <button onclick="app.sendGlobalCommand('LOCK_AVAILABLE')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-lock mr-2"></i>🔒 قفل المتاحين</button>
-            <button onclick="app.sendGlobalCommand('UNLOCK_ALL')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-unlock-alt mr-2"></i>🔓 فتح الجميع</button>
-            <button onclick="app.sendGlobalCommand('SHUTDOWN_ALL')" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-power-off mr-2"></i>⚡ إغلاق الجميع</button>
-            <button onclick="app.openSettingsModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-cogs mr-2"></i>⚙️ الإعدادات</button>
+        <div class="mb-6 p-4 bg-[#0a0a0a] border border-gray-800 rounded-lg shadow-md flex flex-wrap gap-2 justify-center w-full">
+            <button onclick="app.sendGlobalCommand('LOCK_AVAILABLE')" class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-3 px-4 rounded transition-colors"><i class="fas fa-lock mr-2"></i>Lock Available</button>
+            <button onclick="app.sendGlobalCommand('UNLOCK_ALL')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors"><i class="fas fa-unlock-alt mr-2"></i>Unlock All</button>
+            <button onclick="app.openSettingsModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded transition-colors"><i class="fas fa-cogs mr-2"></i>Settings</button>
         </div>
 
         <!-- PC Grid -->
-        <div id="pc-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+        <div id="pc-grid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             <!-- PC Cards will be dynamically injected here -->
         </div>
     </div>
 
     <!-- Control PC Modal -->
-    <div id="control-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md relative">
+    <div id="control-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="bg-[#0a0a0a] border border-yellow-500/50 rounded-lg shadow-xl p-6 w-full max-w-md relative shadow-yellow-400/20">
             <button onclick="app.closeControlModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
-            <h2 id="modal-pc-id" class="text-2xl font-bold mb-6">Control PC-XX</h2>
+            <h2 id="modal-pc-id" class="text-2xl font-bold mb-6 glowing-text">Control PC-XX</h2>
 
             <!-- Actions -->
             <div class="space-y-4">
                 <div>
                     <label class="block mb-2">Add Fixed Time (Minutes)</label>
                     <div class="flex">
-                        <input type="number" id="modal-add-time-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="e.g., 60">
-                        <button onclick="app.addFixedTime()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Add</button>
+                        <input type="number" id="modal-add-time-input" class="bg-gray-900 text-white border border-yellow-500/50 rounded-l px-3 py-2 w-full focus:ring-yellow-400 focus:border-yellow-400" placeholder="e.g., 60">
+                        <button onclick="app.addFixedTime()" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-r">Add</button>
                     </div>
                 </div>
                 
-                <button onclick="app.openUnlimitedSession()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">⏱️ وقت مفتوح (Open Session)</button>
-                <button onclick="app.forceLock()" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">🔒 قفل إجباري (Force Lock)</button>
+                <button onclick="app.openUnlimitedSession()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">⏱️ Open Session</button>
+                <button onclick="app.forceLock()" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">🔒 Force Lock</button>
 
                 <div>
                     <label class="block mb-2">Broadcast Alert to this PC</label>
                     <div class="flex">
-                        <input type="text" id="modal-broadcast-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Your message...">
+                        <input type="text" id="modal-broadcast-input" class="bg-gray-900 text-white border border-yellow-500/50 rounded-l px-3 py-2 w-full focus:ring-yellow-400 focus:border-yellow-400" placeholder="Your message...">
                         <button onclick="app.sendBroadcast()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r">Send</button>
                     </div>
                 </div>
@@ -75,29 +77,82 @@
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative">
-            <button onclick="app.closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
-            <h2 class="text-2xl font-bold mb-6">Global Settings</h2>
-
-            <!-- Daily Unlock PIN -->
-            <div class="mb-6">
-                <label class="block mb-2 font-semibold">Daily Unlock PIN</label>
-                <p class="text-sm text-gray-400 mb-2">PIN used by the agent to automatically unlock screens.</p>
-                <div class="flex">
-                    <input type="password" id="daily-pin-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Enter new PIN">
-                    <button onclick="app.saveDailyPin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">Save PIN</button>
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-[#0a0a0a] border border-yellow-500/50 rounded-lg shadow-xl w-full max-w-lg relative shadow-yellow-400/20 flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-gray-800">
+                <h2 class="text-2xl font-bold glowing-text">Global Settings</h2>
+                <button onclick="app.closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl z-10">&times;</button>
+            </div>
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 overflow-y-auto">
+                <!-- Daily Unlock PIN -->
+                <div class="mb-6">
+                    <label class="block mb-2 font-semibold">Daily Unlock PIN</label>
+                    <p class="text-sm text-gray-400 mb-2">PIN used by the agent to automatically unlock screens.</p>
+                    <div class="flex">
+                        <input type="password" id="daily-pin-input" class="bg-gray-900 text-white border border-yellow-500/50 rounded-l px-3 py-2 w-full focus:ring-yellow-400 focus:border-yellow-400" placeholder="Enter new PIN">
+                        <button onclick="app.saveDailyPin()" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-r">Save PIN</button>
+                    </div>
+                </div>
+    
+                <!-- Remote Start (WOL) -->
+                <div class="mb-6">
+                    <label class="block mb-2 font-semibold text-sky-400">Remote Start (Wake-on-LAN)</label>
+                    <p class="text-sm text-gray-400 mb-2">Start offline PCs remotely. Requires MAC addresses to be configured below.</p>
+                    <button onclick="app.openWolModal()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-satellite-dish mr-2"></i>Open Remote Start Menu</button>
+                </div>
+    
+                <!-- MAC Address Management -->
+                <div class="mb-6">
+                    <button onclick="app.toggleMacAddressList()" class="w-full flex justify-between items-center text-left font-semibold mb-2 p-2 rounded hover:bg-gray-800">
+                        <span>Device MAC Addresses</span>
+                        <i id="mac-accordion-icon" class="fas fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div id="mac-address-container" class="hidden">
+                        <p class="text-sm text-gray-400 mb-2">Enter the MAC address for each PC to enable Wake-on-LAN.</p>
+                        <div id="mac-address-list" class="space-y-2 max-h-60 overflow-y-auto p-2 bg-gray-900 rounded">
+                            <!-- MAC address inputs will be injected here -->
+                        </div>
+                        <button onclick="app.saveMacAddresses()" class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save MAC Addresses</button>
+                    </div>
+                </div>
+    
+                <!-- Shutdown All PCs -->
+                <div>
+                    <label class="block mb-2 font-semibold text-red-500">Shutdown All PCs</label>
+                    <div class="flex">
+                        <button onclick="app.openPinConfirmationModal('SHUTDOWN_ALL')" class="w-full bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition-colors"><i class="fas fa-power-off mr-2"></i>Shutdown All PCs</button>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Change Windows System Password -->
-            <div>
-                <label class="block mb-2 font-semibold">Change All Windows Passwords</label>
-                <p class="text-sm text-gray-400 mb-2">WARNING: This changes the actual Windows user password on all online PCs.</p>
-                <div class="flex">
-                    <input type="password" id="windows-password-input" class="bg-gray-700 text-white border border-gray-600 rounded-l px-3 py-2 w-full" placeholder="Enter new system password">
-                    <button onclick="app.changeAllWindowsPasswords()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r">Change All</button>
+    <!-- PIN Confirmation Modal -->
+    <div id="pin-confirmation-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="bg-[#0a0a0a] border border-red-500/50 rounded-lg shadow-xl p-6 w-full max-w-sm relative shadow-red-400/20">
+            <button onclick="app.closePinConfirmationModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h2 id="pin-modal-title" class="text-2xl font-bold mb-4 text-red-500 glowing-text">PIN Confirmation Required</h2>
+            <p id="pin-modal-prompt" class="text-gray-300 mb-6">Enter the Daily PIN to confirm shutdown.</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block mb-2 text-yellow-400">Daily PIN</label>
+                    <input type="password" id="pin-modal-input" class="bg-gray-900 text-white border border-yellow-500/50 rounded px-3 py-2 w-full focus:ring-yellow-400 focus:border-yellow-400" placeholder="****">
                 </div>
+                <button id="pin-modal-confirm-btn" onclick="app.confirmPinAndExecute()" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-4 rounded">Confirm & Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wake-on-LAN Modal -->
+    <div id="wol-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="bg-[#0a0a0a] border border-sky-500/50 rounded-lg shadow-xl p-6 w-full max-w-md relative shadow-sky-400/20">
+            <button onclick="app.closeWolModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-6 glowing-text text-sky-400">Remote Start (WOL)</h2>
+            <div id="wol-pc-list" class="space-y-2 max-h-96 overflow-y-auto">
+                <!-- PC list will be injected here by app.js -->
             </div>
         </div>
     </div>
